@@ -1,8 +1,10 @@
 package drivers
 
 import (
+	"bytes"
 	"fmt"
-	"strings"	
+	"strings"
+	"text/template"	
 	
 	"github.com/golang/glog"
 	"github.com/scottdware/go-bigip"
@@ -13,6 +15,24 @@ import (
 const (
 	F5GWPROVIDER	= "f5"
 )
+
+const iRuletmpl = `
+when HTTP_REQUEST {
+    set host_info [string tolower [HTTP::host]]
+    switch -glob $host_info {
+{{range .Rules}}
+        {{.URL}} { pool {{.PoolName}} }
+{{end}}      
+    }
+}	
+`
+type RuleData struct {
+	Rules	[]Rule
+}
+type Rule struct {
+	URL			string
+	PoolName	string
+}
 
 type GwProvider interface {
 	CreatePool(string, string)error
@@ -136,15 +156,19 @@ func (f5 *F5er)VirtualServerBindURL(vsName, URL, poolName string)error{
     rules := vs.Rules	
 	
 	iRuleName := "iRule_" + vsName + "_" + URL + "_" + poolName
-	rule := `
-when HTTP_REQUEST {
-    set host_info [string tolower [HTTP::host]]
-    switch -glob $host_info {
-      ` + URL + ` { pool ` + poolName + ` }
-    }
-}	
-	`
-    err = f5.client.CreateIRule(iRuleName, rule)
+	buff := bytes.NewBufferString("")
+	ruleTmpl := template.Must(template.New("irule").Parse(iRuletmpl))
+	data := RuleData{
+		Rules : []Rule{
+			Rule{
+				URL : URL,
+				PoolName : poolName,
+			},		
+		},
+	}
+	ruleTmpl.Execute(buff, data)
+	
+    err = f5.client.CreateIRule(iRuleName, buff.String())
     if err != nil {
 	    if strings.Contains(err.Error(), "already exists") {
 		    glog.Infof("iRule %s Already exists. skip create.", iRuleName)
