@@ -15,6 +15,8 @@ import (
 	
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	
+	crdv1 "github.com/sak0/ygw/pkg/apis/external/v1"
 )
 
 func WaitCRDReady(clientset apiextensionsclient.Interface, crdName string) error {
@@ -88,4 +90,18 @@ func MustNewKubeClient() kubernetes.Interface {
 		panic(err)
 	}
 	return kubernetes.NewForConfigOrDie(cfg)
+}
+
+func GetMembersMap(pool *crdv1.ExternalNatPool)map[string]int {
+	memberMap := make(map[string]int)
+	if len(pool.Spec.Members) < 1 {
+		return memberMap
+	}
+	
+	for _, member := range pool.Spec.Members {
+		memberStr := member.IP + ":" + member.Port
+		memberMap[memberStr] = 1
+	}
+	
+	return memberMap
 }

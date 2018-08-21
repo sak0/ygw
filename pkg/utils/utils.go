@@ -111,4 +111,10 @@ func GeneratePortNameCLB(namespace string, ip string)string {
 	devHash := hashIp()
 	portName := devHash + "_CLB_" + namespace + "_" + strings.Replace(ip, ".", "_", -1)
 	return portName
+}
+
+func GeneratePoolNameEXP(namespace string, name string)string {
+	devHash := hashIp()
+	poolName := namespace + "_" + name + "_" + devHash 
+	return poolName
 }										

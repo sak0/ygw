@@ -32,10 +32,11 @@ func (f *poolclient) Create(obj *crdv1.ExternalNatPool) (*crdv1.ExternalNatPool,
 	return &result, err
 }
 
-func (f *poolclient) Update(obj *crdv1.ExternalNatPool) (*crdv1.ExternalNatPool, error) {
+func (f *poolclient) Update(obj *crdv1.ExternalNatPool, name string) (*crdv1.ExternalNatPool, error) {
 	var result crdv1.ExternalNatPool
 	err := f.cl.Put().
 		Namespace(f.ns).Resource(f.plural).
+		Name(name).
 		Body(obj).Do().Into(&result)
 	return &result, err
 }

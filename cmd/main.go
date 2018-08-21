@@ -26,7 +26,7 @@ import (
 
 const (
 	healthzPath = "/healthz"
-	electionKey = "lb-operator"
+	electionKey = "ygw"
 )
 
 var (
@@ -89,7 +89,7 @@ func main() {
 		w.Write([]byte(`<html>
 			<head><title>ExternalNat Controller</title></head>
 			<body>
-			<h1>Hello LB</h1>
+			<h1>Hello GW</h1>
 			<p><a href='` + metricsPath + `'>Metrics</a></p>
 			</body>
 			</html>`))
