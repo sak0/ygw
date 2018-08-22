@@ -117,4 +117,10 @@ func GeneratePoolNameEXP(namespace string, name string)string {
 	devHash := hashIp()
 	poolName := namespace + "_" + name + "_" + devHash 
 	return poolName
-}										
+}
+
+func GenerateCexName(namespace string, name string)string {
+	devHash := hashIp()
+	cexName := namespace + "_" + name + "_" + devHash 
+	return cexName
+}											

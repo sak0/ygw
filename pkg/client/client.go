@@ -71,6 +71,69 @@ func (f *poolclient) NewListWatch() *cache.ListWatch {
 	return cache.NewListWatchFromClient(f.cl, f.plural, meta_v1.NamespaceAll, fields.Everything())
 }
 
+
+
+func CexClient(cl *rest.RESTClient, scheme *runtime.Scheme, namespace string) *cexclient {
+	return &cexclient{cl: cl, ns: namespace, plural: crdv1.CEXPlural,
+		codec: runtime.NewParameterCodec(scheme)}
+}
+
+type cexclient struct {
+	cl		*rest.RESTClient
+	ns		string
+	plural	string
+	codec	runtime.ParameterCodec
+}
+
+func (f *cexclient) Create(obj *crdv1.ClassicExternalNat) (*crdv1.ClassicExternalNat, error) {
+	var result crdv1.ClassicExternalNat
+	err := f.cl.Post().
+		Namespace(f.ns).Resource(f.plural).
+		Body(obj).Do().Into(&result)
+	return &result, err
+}
+
+func (f *cexclient) Update(obj *crdv1.ClassicExternalNat, name string) (*crdv1.ClassicExternalNat, error) {
+	var result crdv1.ClassicExternalNat
+	err := f.cl.Put().
+		Namespace(f.ns).Resource(f.plural).
+		Name(name).
+		Body(obj).Do().Into(&result)
+	return &result, err
+}
+
+func (f *cexclient) Delete(name string, options *meta_v1.DeleteOptions) error {
+	return f.cl.Delete().
+		Namespace(f.ns).Resource(f.plural).
+		Name(name).Body(options).Do().
+		Error()
+}
+
+func (f *cexclient) Get(name string) (*crdv1.ClassicExternalNat, error) {
+	var result crdv1.ClassicExternalNat
+	err := f.cl.Get().
+		Namespace(f.ns).Resource(f.plural).
+		Name(name).Do().Into(&result)
+	return &result, err
+}
+
+func (f *cexclient) List(opts meta_v1.ListOptions) (*crdv1.ClassicExternalNatList, error) {
+	var result crdv1.ClassicExternalNatList
+	err := f.cl.Get().
+		Namespace(f.ns).Resource(f.plural).
+		VersionedParams(&opts, f.codec).
+		Do().Into(&result)
+	return &result, err
+}
+
+// Create a new List watch for our TPR
+func (f *cexclient) NewListWatch() *cache.ListWatch {
+	//return cache.NewListWatchFromClient(f.cl, f.plural, f.ns, fields.Everything())
+	return cache.NewListWatchFromClient(f.cl, f.plural, meta_v1.NamespaceAll, fields.Everything())
+}
+
+
+
 func NewClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
 	scheme := runtime.NewScheme()
 	if err := crdv1.AddToScheme(scheme); err != nil {

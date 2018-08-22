@@ -75,7 +75,6 @@ func (c *PoolController)onPoolAdd(obj interface{}) {
 	glog.V(3).Infof("Add-Pool: %v", obj)
 	
 	pool := obj.(*crdv1.ExternalNatPool)
-	glog.V(3).Infof("Add-Pool: %+v", pool)
 	
 	poolName := utils.GeneratePoolNameEXP(pool.Namespace, pool.Name)
 	err := c.driver.CreatePool(poolName, pool.Spec.Method)

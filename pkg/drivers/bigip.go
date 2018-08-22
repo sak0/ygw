@@ -39,6 +39,9 @@ type GwProvider interface {
 	AddPoolMember(string, string, string)error
 	DelPoolMember(string, string, string)error
 	DeletePool(string)error
+	CreateVirtualServer(string, string, string, string, string)error
+	DeleteVirtualServer(string)error
+	VirtualServerBindPool(string, string)error
 }
 
 type F5er struct{
