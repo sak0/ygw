@@ -3,6 +3,7 @@ package drivers
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 	"text/template"	
 	
@@ -312,10 +313,16 @@ func (f5 *F5er)DelPoolMember(poolName, memberIp, memberPort string)error{
 	return f5.client.DeleteNode(memberIp)
 }
 
-func New(gwtype string)(GwProvider, error){
+func New(gwtype string)(GwProvider, error){	
 	switch gwtype {
 		case F5GWPROVIDER:
-			client := bigip.NewSession("10.0.10.253", "user", "yhcs_user", nil)
+			url := os.Getenv("BIGIP_URL")
+			username := os.Getenv("BIGIP_LOGIN")
+			password := os.Getenv("BIGIP_PASSWORD")
+			if url == "" || username == "" || password == "" {
+				return nil, fmt.Errorf("Could not completely determine login parameters from env: BIGIP_URL, BIGIP_LOGIN, BIGIP_PASSWORD")
+			}		
+			client := bigip.NewSession(url, username, password, nil)
 			f5er := &F5er{
 				client : client,
 			}			

@@ -74,11 +74,20 @@ func run(stopCh <-chan struct{}){
 //		}
 //	}
 
-	aexctr, _ := controller.NewAexController(kubeClient, crdcs, scheme)
+	aexctr, err := controller.NewAexController(kubeClient, crdcs, scheme)
+	if err != nil {
+		panic(err.Error())
+	}	
 	go aexctr.Run(stopCh)
-	cexctr, _ := controller.NewCexController(kubeClient, crdcs, scheme)
+	cexctr, err := controller.NewCexController(kubeClient, crdcs, scheme)
+	if err != nil {
+		panic(err.Error())
+	}	
 	go cexctr.Run(stopCh)
-	poolctr, _ := controller.NewPoolController(kubeClient, crdcs, scheme)
+	poolctr, err := controller.NewPoolController(kubeClient, crdcs, scheme)
+	if err != nil {
+		panic(err.Error())
+	}	
 	go poolctr.Run(stopCh)
 }
 
