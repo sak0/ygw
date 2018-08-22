@@ -98,7 +98,6 @@ func (c *CexController)onCexUpdate(oldObj, newObj interface{}) {
 	glog.V(3).Infof("Update-Cex: %v -> %v", oldObj, newObj)	
 }
 
-
 func (c *CexController)onCexDel(obj interface{}) {
 	glog.V(3).Infof("Del-Cex: %v", obj)
 	cex := obj.(*crdv1.ClassicExternalNat)

@@ -105,3 +105,16 @@ func GetMembersMap(pool *crdv1.ExternalNatPool)map[string]int {
 	
 	return memberMap
 }
+
+func GetRulesMap(aex *crdv1.AppExternalNat)map[crdv1.AppExternalNatRule]int {
+	rulesMap := make(map[crdv1.AppExternalNatRule]int)
+	if len(aex.Spec.Rules) < 1 {
+		return rulesMap
+	}
+	
+	for _, rule := range aex.Spec.Rules{
+		rulesMap[rule] = 1
+	}
+	
+	return rulesMap
+}

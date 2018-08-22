@@ -15,7 +15,7 @@ type ClassicExternalNat struct {
 type ClassicExternalNatSpec struct {
 	IP			string	`json:"ip"`
 	Port		string	`json:"port"`
-	Protocol		string	`json:"protocol"`
+	Protocol	string	`json:"protocol"`
 	Backends	[]ClassicExternalNatBackend	`json:"backends"`
 }
 

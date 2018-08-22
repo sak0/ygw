@@ -74,8 +74,8 @@ func run(stopCh <-chan struct{}){
 //		}
 //	}
 
-//	aexctr, _ := controller.NewAEXController(kubeClient, crdcs, scheme)
-//	go aexctr.Run(stopCh)
+	aexctr, _ := controller.NewAexController(kubeClient, crdcs, scheme)
+	go aexctr.Run(stopCh)
 	cexctr, _ := controller.NewCexController(kubeClient, crdcs, scheme)
 	go cexctr.Run(stopCh)
 	poolctr, _ := controller.NewPoolController(kubeClient, crdcs, scheme)

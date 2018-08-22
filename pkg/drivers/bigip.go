@@ -42,6 +42,8 @@ type GwProvider interface {
 	CreateVirtualServer(string, string, string, string, string)error
 	DeleteVirtualServer(string)error
 	VirtualServerBindPool(string, string)error
+	VirtualServerBindURL(string, string, string)error
+	VirtualServerUnbindURL(string, string, string)error
 }
 
 type F5er struct{

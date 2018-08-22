@@ -6,4 +6,7 @@ const (
 
 	CEXSTATUSAVAILABLE 		= "Available"
 	CEXSTATUSERROR 			= "Error"	
+	
+	AEXSTATUSAVAILABLE 		= "Available"
+	AEXSTATUSERROR 			= "Error"		
 )

@@ -40,6 +40,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ExternalNatPoolList{},
 		&ClassicExternalNat{},
 		&ClassicExternalNatList{},
+		&AppExternalNat{},
+		&AppExternalNatList{},		
 	)
 	meta_v1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

@@ -134,6 +134,65 @@ func (f *cexclient) NewListWatch() *cache.ListWatch {
 
 
 
+func AexClient(cl *rest.RESTClient, scheme *runtime.Scheme, namespace string) *aexclient {
+	return &aexclient{cl: cl, ns: namespace, plural: crdv1.AEXPlural,
+		codec: runtime.NewParameterCodec(scheme)}
+}
+
+type aexclient struct {
+	cl		*rest.RESTClient
+	ns		string
+	plural	string
+	codec	runtime.ParameterCodec
+}
+
+func (f *aexclient) Create(obj *crdv1.AppExternalNat) (*crdv1.AppExternalNat, error) {
+	var result crdv1.AppExternalNat
+	err := f.cl.Post().
+		Namespace(f.ns).Resource(f.plural).
+		Body(obj).Do().Into(&result)
+	return &result, err
+}
+
+func (f *aexclient) Update(obj *crdv1.AppExternalNat, name string) (*crdv1.AppExternalNat, error) {
+	var result crdv1.AppExternalNat
+	err := f.cl.Put().
+		Namespace(f.ns).Resource(f.plural).
+		Name(name).
+		Body(obj).Do().Into(&result)
+	return &result, err
+}
+
+func (f *aexclient) Delete(name string, options *meta_v1.DeleteOptions) error {
+	return f.cl.Delete().
+		Namespace(f.ns).Resource(f.plural).
+		Name(name).Body(options).Do().
+		Error()
+}
+
+func (f *aexclient) Get(name string) (*crdv1.AppExternalNat, error) {
+	var result crdv1.AppExternalNat
+	err := f.cl.Get().
+		Namespace(f.ns).Resource(f.plural).
+		Name(name).Do().Into(&result)
+	return &result, err
+}
+
+func (f *aexclient) List(opts meta_v1.ListOptions) (*crdv1.AppExternalNatList, error) {
+	var result crdv1.AppExternalNatList
+	err := f.cl.Get().
+		Namespace(f.ns).Resource(f.plural).
+		VersionedParams(&opts, f.codec).
+		Do().Into(&result)
+	return &result, err
+}
+
+// Create a new List watch for our TPR
+func (f *aexclient) NewListWatch() *cache.ListWatch {
+	//return cache.NewListWatchFromClient(f.cl, f.plural, f.ns, fields.Everything())
+	return cache.NewListWatchFromClient(f.cl, f.plural, meta_v1.NamespaceAll, fields.Everything())
+}
+
 func NewClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
 	scheme := runtime.NewScheme()
 	if err := crdv1.AddToScheme(scheme); err != nil {
