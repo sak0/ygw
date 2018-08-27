@@ -8,5 +8,8 @@ const (
 	CEXSTATUSERROR 			= "Error"	
 	
 	AEXSTATUSAVAILABLE 		= "Available"
-	AEXSTATUSERROR 			= "Error"		
+	AEXSTATUSERROR 			= "Error"	
+	
+	ALBPOOLSTATUSAVAILABLE 	= "Available"
+	ALBPOOLSTATUSERROR 		= "Error"		
 )

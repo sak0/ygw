@@ -65,7 +65,6 @@ func (f5 *F5er)createVirtualServerNat(name, ip, port, protocol string)error{
 		Mask : "255.255.255.255",
 		Destination : dest,
 		IPProtocol : protocol,
-		RateLimit : "10240",
 		Profiles : profiles,
 	}
 	return f5.client.AddVirtualServer(vsConfig)
@@ -106,7 +105,7 @@ func (f5 *F5er)createVirtualServerURL(name, ip, port string)error{
 		Mask : "255.255.255.255",
 		Destination : dest,
 		IPProtocol : "tcp",
-		RateLimit : "10240",
+//		RateLimit : "10240",
 		Profiles: profiles,
 	}
 	return f5.client.AddVirtualServer(vsConfig)

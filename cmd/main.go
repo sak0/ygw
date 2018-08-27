@@ -61,7 +61,7 @@ func init() {
 func run(stopCh <-chan struct{}){
 	// Get all clients
 //	kubeClient, extClient, crdcs, scheme, err := utils.CreateClients(kubeConf)
-	kubeClient, _, crdcs, scheme, err := utils.CreateClients(kubeConf)
+	kubeClient, _, crdcs, scheme, lbcs, lbscheme, err := utils.CreateClients(kubeConf)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -89,6 +89,15 @@ func run(stopCh <-chan struct{}){
 		panic(err.Error())
 	}	
 	go poolctr.Run(stopCh)
+	
+	glog.V(2).Infof("scheme: %+v", scheme)
+	glog.V(2).Infof("lbscheme: %+v", lbscheme)
+	
+	calbpoolctr, err := controller.NewCALBPoolController(kubeClient, lbcs, lbscheme)
+	if err != nil {
+		panic(err.Error())
+	}	
+	go calbpoolctr.Run(stopCh)	
 }
 
 
