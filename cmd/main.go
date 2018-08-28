@@ -97,7 +97,13 @@ func run(stopCh <-chan struct{}){
 	if err != nil {
 		panic(err.Error())
 	}	
-	go calbpoolctr.Run(stopCh)	
+	go calbpoolctr.Run(stopCh)
+	
+	calbctr, err := controller.NewCALBController(kubeClient, lbcs, lbscheme)
+	if err != nil {
+		panic(err.Error())
+	}	
+	go calbctr.Run(stopCh)			
 }
 
 

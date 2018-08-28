@@ -12,6 +12,9 @@ const (
 	
 	CALBPPlural		string = "capploadbalancepool"
 	FullCALBPName	string = CALBPPlural + "." + LBGroup
+
+	CALBPlural		string = "capploadbalance"
+	FullCALBName	string = CALBPlural + "." + LBGroup	
 )
 
 var (
@@ -26,6 +29,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&CAppLoadBalancePool{},
 		&CAppLoadBalancePoolList{},	
+		&CAppLoadBalance{},
+		&CAppLoadBalanceList{},
 	)
 	meta_v1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
