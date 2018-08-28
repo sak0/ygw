@@ -136,4 +136,10 @@ func GenerateAexName(namespace string, name string)string {
 	devHash := hashIp()
 	cexName := "A_" + namespace + "_" + name + "_" + devHash 
 	return cexName
+}
+
+func GeneratePoolNameCALBP(namespace string, name string)string {
+	devHash := hashIp()
+	poolName := namespace + "_" + name + "_" + devHash 
+	return poolName	
 }										

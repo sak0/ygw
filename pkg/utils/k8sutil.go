@@ -17,6 +17,7 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	
 	crdv1 "github.com/sak0/ygw/pkg/apis/external/v1"
+	lbv1 "github.com/sak0/ygw/pkg/apis/loadbalance/v1"
 )
 
 func WaitCRDReady(clientset apiextensionsclient.Interface, crdName string) error {
@@ -101,6 +102,27 @@ func GetMembersMap(pool *crdv1.ExternalNatPool)map[string]int {
 	for _, member := range pool.Spec.Members {
 		memberStr := member.IP + ":" + member.Port
 		memberMap[memberStr] = 1
+	}
+	
+	return memberMap
+}
+
+func GetCALBMembersMap(pool *lbv1.CAppLoadBalancePool)map[string]int {
+	memberMap := make(map[string]int)
+	if len(pool.Spec.Members) < 1 {
+		return memberMap
+	}
+	
+	var weight string
+	for _, member := range pool.Spec.Members {
+		if member.Weight != "" {
+			weight = member.Weight
+		} else {
+			weight = "1"
+		}		
+		
+		memberStr := member.IP + ":" + member.Port + ":" + weight
+		memberMap[memberStr] = 1	
 	}
 	
 	return memberMap

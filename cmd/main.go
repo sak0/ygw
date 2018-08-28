@@ -90,9 +90,6 @@ func run(stopCh <-chan struct{}){
 	}	
 	go poolctr.Run(stopCh)
 	
-	glog.V(2).Infof("scheme: %+v", scheme)
-	glog.V(2).Infof("lbscheme: %+v", lbscheme)
-	
 	calbpoolctr, err := controller.NewCALBPoolController(kubeClient, lbcs, lbscheme)
 	if err != nil {
 		panic(err.Error())
@@ -111,9 +108,9 @@ func main() {
 	http.Handle(metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
-			<head><title>ExternalNat Controller</title></head>
+			<head><title>YH Gateway&LB Controller</title></head>
 			<body>
-			<h1>Hello GW</h1>
+			<h1>Hello YGW</h1>
 			<p><a href='` + metricsPath + `'>Metrics</a></p>
 			</body>
 			</html>`))

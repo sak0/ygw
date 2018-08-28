@@ -13,6 +13,7 @@ type CAppLoadBalancePool struct {
 }
 
 type CAppLoadBalancePoolSpec struct {
+	Method		string							`json:"method"`
 	Members		[]CAppLoadBalancePoolMember		`json:"members"`
 }
 
