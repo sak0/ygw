@@ -2,10 +2,12 @@ package drivers
 
 import (
 	"fmt"
-	"strconv"	
+	"strconv"
+	"sort"
 	
 	"github.com/golang/glog"
-		
+	
+	"github.com/chiradeep/go-nitro/config/cs"	
 	citrixbasic "github.com/chiradeep/go-nitro/config/basic"
 	/*"github.com/chiradeep/go-nitro/config/cs"*/
 	citrixlb "github.com/chiradeep/go-nitro/config/lb"
@@ -21,6 +23,11 @@ type LbProvider interface {
 	AddMemberToPool(string, string, int, int)error
 	RemoveMemberFromPool(string, string, int)error
 	DeletePool(string)error
+	
+	CreateLB(string, string, int)error
+	DeleteLB(string)error
+	AddRuleToLB(string, string, string, string, string, string)error
+	RemoveRuleToLB(string, string, string, string, string, string)error
 }
 
 type CitrixLb struct{}
@@ -161,12 +168,12 @@ func (c *CitrixLb)bindServerToGroup(groupName string, serverName string, port, w
 func (c *CitrixLb)AddMemberToPool(groupName string, ip string, port, weight int)error{
 	err := c.createServer(ip)
 	if err != nil {
-		return err
+		glog.Errorf("createServer failed: %v", err)
 	}
 	
 	err = c.bindServerToGroup(groupName, ip, port, weight)
 	if err != nil {
-		return err
+		glog.Errorf("bindServerToGroup failed: %v", err)
 	}
 	
 	return nil
@@ -191,6 +198,114 @@ func (c *CitrixLb)unbindServerToGroup(groupName, serverName string, port int)err
 
 func (c *CitrixLb)RemoveMemberFromPool(groupName, serverName string, port int)error{
 	return c.unbindServerToGroup(groupName, serverName, port)
+}
+
+func (c *CitrixLb)createContentVs(csvserverName string, vserverIp string, vserverPort int)error{
+	client, _ := netscaler.NewNitroClientFromEnv()
+	protocol := "HTTP"
+	cs := cs.Csvserver{
+		Name:        csvserverName,
+		Ipv46:       vserverIp,
+		Servicetype: protocol,
+		Port:        vserverPort,
+	}
+	_, _ = client.AddResource(netscaler.Csvserver.Type(), csvserverName, &cs)
+	return nil
+}
+
+func (c *CitrixLb)CreateLB(lbName string, vip string, port int)error{
+	return c.createContentVs(lbName, vip, port)
+}
+
+func (c *CitrixLb)RemoveRuleToLB(lbName string, domainName string, path string, 
+	poolName string, actionName string, policyName string)error{
+	client, _ := netscaler.NewNitroClientFromEnv()
+	
+	err := client.UnbindResource(netscaler.Csvserver.Type(), lbName, netscaler.Cspolicy.Type(), policyName, "policyName")
+	if err != nil {
+		glog.Errorf("UnbindPolicy failed: %v", err)
+	}		
+	err = client.DeleteResource(netscaler.Cspolicy.Type(), policyName)
+	if err != nil {
+		glog.Errorf("DeletePolicy failed: %v", err)
+	}
+	
+	err = client.DeleteResource(netscaler.Csaction.Type(), actionName)
+	if err != nil {
+		glog.Errorf("DeleteAction failed: %v", err)
+	}	
+	
+	return nil
+}
+	
+func (c *CitrixLb)ListBoundPolicies(csvserverName string) ([]string, []int) {
+	ret1 := []string{}
+	ret2 := []int{}
+	client, _ := netscaler.NewNitroClientFromEnv()
+	policies, err := client.FindAllBoundResources(netscaler.Csvserver.Type(), csvserverName, netscaler.Cspolicy.Type())
+	if err != nil {
+		glog.Errorf("No bindings for CS Vserver %s: %v", csvserverName, err)
+		return ret1, ret2
+	}
+	for _, policy := range policies {
+		pname := policy["policyname"].(string)
+		prio, err := strconv.Atoi(policy["priority"].(string))
+		if err != nil {
+			continue
+		}
+		ret1 = append(ret1, pname)
+		ret2 = append(ret2, prio)
+
+	}
+	sort.Ints(ret2)
+	return ret1, ret2
+}	
+
+func (c *CitrixLb)AddRuleToLB(lbName string, domainName string, path string, 
+	poolName string, actionName string, policyName string)error{
+	var priority = 1
+	_, priorities := c.ListBoundPolicies(lbName)
+	if len(priorities) > 0 {
+		priority = priorities[len(priorities)-1] + 1
+	}		
+		
+	client, _ := netscaler.NewNitroClientFromEnv()	
+	csAction := cs.Csaction{
+		Name:            actionName,
+		Targetlbvserver: poolName,
+	}
+	_, _ = client.AddResource(netscaler.Csaction.Type(), actionName, &csAction)
+	
+	var rule string
+	if path != "" {
+		rule = fmt.Sprintf("HTTP.REQ.HOSTNAME.EQ(\"%s\") && HTTP.REQ.URL.PATH.EQ(\"%s\")", domainName, path)
+	} else {
+		rule = fmt.Sprintf("HTTP.REQ.HOSTNAME.EQ(\"%s\")", domainName)
+	}
+	csPolicy := cs.Cspolicy{
+		Policyname: policyName,
+		Rule:       rule,
+		Action:     actionName,
+	}
+	_, _ = client.AddResource(netscaler.Cspolicy.Type(), policyName, &csPolicy)
+
+	binding2 := cs.Csvservercspolicybinding{
+		Name:       lbName,
+		Policyname: policyName,
+		Priority:   priority,
+		Bindpoint:  "REQUEST",
+	}
+	_ = client.BindResource(netscaler.Csvserver.Type(), lbName, netscaler.Cspolicy.Type(), policyName, &binding2)	
+	return nil
+}
+	
+func (c *CitrixLb)DeleteLB(lbName string)error{
+	client, _ := netscaler.NewNitroClientFromEnv()	
+	err := client.DeleteResource(netscaler.Csvserver.Type(), lbName)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewLBer(lbtype string)(LbProvider, error){

@@ -142,4 +142,18 @@ func GeneratePoolNameCALBP(namespace string, name string)string {
 	devHash := hashIp()
 	poolName := namespace + "_" + name + "_" + devHash 
 	return poolName	
+}
+
+func GenerateCALBName(name string)string{
+	devHash := hashIp()
+	lbName := name + "_" + devHash
+	return lbName
+}
+
+func GeneratePolicyName(lbName, domainName, path string)string{
+	if path == "" {
+		path = "nilpath"
+	}
+	path = strings.Replace(path, "/", "_", -1)
+	return lbName + "_" + domainName + "_" + path
 }										
