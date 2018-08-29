@@ -140,3 +140,24 @@ func GetRulesMap(aex *crdv1.AppExternalNat)map[crdv1.AppExternalNatRule]int {
 	
 	return rulesMap
 }
+
+func GetCALBPathsMap(calb *lbv1.CAppLoadBalance)map[string]int{
+	pathsMap := make(map[string]int)
+	if len(calb.Spec.Rules) < 1 {
+		return pathsMap
+	} 
+	
+	for _, rule := range calb.Spec.Rules {
+		domainName := rule.Host 
+		for _, path := range rule.Paths {
+			pathName := path.Path
+			if pathName == "" {
+				pathName = "nilpath"
+			}		
+			poolName := path.Pool
+			keyStr := domainName + "_" + pathName + "_" + poolName
+			pathsMap[keyStr] = 1
+		}
+	}
+	return pathsMap
+}

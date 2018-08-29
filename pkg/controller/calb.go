@@ -3,6 +3,7 @@ package controller
 import (
 	"time"
 	"os"
+	"reflect"
 	"strconv"
 	
 	"github.com/golang/glog"
@@ -72,11 +73,17 @@ func (c *CALBController)Run(ctx <-chan struct{}) {
 
 func (c *CALBController)addRuleToCALB(lbName string, rule lbv1.CAppLoadBalanceRule)error{
 	domainName := rule.Host
+	var pathStr string
 	for _, path := range rule.Paths {
-		policyName := utils.GeneratePolicyName(lbName, domainName, path.Path)
+		if path.Path == "/" {
+			pathStr = ""
+		} else {
+			pathStr = path.Path
+		}
+		policyName := utils.GeneratePolicyName(lbName, domainName, pathStr)
 		actionName := policyName
 		poolName := path.Pool
-		c.driver.AddRuleToLB(lbName, domainName, path.Path, poolName, actionName, policyName)
+		c.driver.AddRuleToLB(lbName, domainName, pathStr, poolName, actionName, policyName)
 	} 
 	
 	return nil
@@ -84,11 +91,17 @@ func (c *CALBController)addRuleToCALB(lbName string, rule lbv1.CAppLoadBalanceRu
 
 func (c *CALBController)removeRuleToCALB(lbName string, rule lbv1.CAppLoadBalanceRule)error{
 	domainName := rule.Host
+	var pathStr string
 	for _, path := range rule.Paths {
-		policyName := utils.GeneratePolicyName(lbName, domainName, path.Path)
+		if path.Path == "/" {
+			pathStr = ""
+		} else {
+			pathStr = path.Path
+		}		
+		policyName := utils.GeneratePolicyName(lbName, domainName, pathStr)
 		actionName := policyName
 		poolName := path.Pool
-		c.driver.RemoveRuleToLB(lbName, domainName, path.Path, poolName, actionName, policyName)
+		c.driver.RemoveRuleToLB(lbName, domainName, pathStr, poolName, actionName, policyName)
 	} 
 	
 	return nil
@@ -112,8 +125,34 @@ func (c *CALBController)onCAlbAdd(obj interface{}) {
 	}
 }
 
+func (c *CALBController)refreshRules(oldCALB *lbv1.CAppLoadBalance, newCALB *lbv1.CAppLoadBalance)error{
+	lbName := utils.GenerateCALBName(newCALB.Name)
+	for _, rule := range oldCALB.Spec.Rules {
+		c.removeRuleToCALB(lbName, rule)
+	}	
+	for _, rule := range newCALB.Spec.Rules {
+		c.addRuleToCALB(lbName, rule)
+	}
+	
+	return nil	
+}
+
 func (c *CALBController)onCAlbUpdate(oldObj, newObj interface{}) {
 	glog.V(3).Infof("Update-CALB: %v -> %v", oldObj, newObj)
+	if !reflect.DeepEqual(oldObj, newObj) {
+		newCAlb := newObj.(*lbv1.CAppLoadBalance)
+		oldCAlb := oldObj.(*lbv1.CAppLoadBalance)
+		
+		pathsNew := utils.GetCALBPathsMap(newCAlb)
+		pathsOld := utils.GetCALBPathsMap(oldCAlb)
+		glog.V(2).Infof("pathsNew: %v", pathsNew)
+		glog.V(2).Infof("pathsOld: %v", pathsOld)
+		if !reflect.DeepEqual(pathsNew, pathsOld) {
+			glog.V(2).Infof("Need update Pool configurations.")
+			//TODO: update rules graceful
+			c.refreshRules(oldCAlb, newCAlb)
+		}					
+	}	
 }
 
 func (c *CALBController)onCAlbDel(obj interface{}) {
