@@ -82,7 +82,7 @@ func (c *CALBController)addRuleToCALB(lbName string, rule lbv1.CAppLoadBalanceRu
 		}
 		policyName := utils.GeneratePolicyName(lbName, domainName, pathStr)
 		actionName := policyName
-		poolName := path.Pool
+		poolName := utils.GeneratePoolNameCALBP("default", path.Pool)
 		c.driver.AddRuleToLB(lbName, domainName, pathStr, poolName, actionName, policyName)
 	} 
 	
@@ -107,15 +107,48 @@ func (c *CALBController)removeRuleToCALB(lbName string, rule lbv1.CAppLoadBalanc
 	return nil
 }
 
+func (c *CALBController)ensureVip(calb *lbv1.CAppLoadBalance)(string, error){
+	if calb.Status.State == lbv1.CALBSTATUSAVAILABLE {
+		return calb.Spec.IP, nil
+	}
+	
+	var vip string
+	var err error
+	if calb.Spec.IP != "" {
+		vip = calb.Spec.IP
+		err = utils.CreatePortFromIp(calb.Namespace, vip, calb.Spec.Subnet)
+		if err != nil {
+			glog.Errorf("Create port from ip failed: %v", err)
+			return vip, err			
+		}
+	} else {
+		vip, err = utils.AllocIpAddrFromSubnet(calb.Namespace, calb.Spec.Subnet)
+		if err != nil {
+			glog.Errorf("Alloc ip failed: %v", err)
+			return "", err
+		} else {
+			glog.V(2).Infof("CreateCLB with vip: %s", vip)	
+		}
+	}
+	
+	return vip, nil
+}
 
 func (c *CALBController)onCAlbAdd(obj interface{}) {
 	glog.V(3).Infof("Add-CALB: %v", obj)
 	calb := obj.(*lbv1.CAppLoadBalance)
+
+	vip, err := c.ensureVip(calb)
+	if err != nil {
+		c.updateError(err.Error(), calb)
+		return		
+	}
+	calb.Spec.IP = vip	
 	
 	lbName := utils.GenerateCALBName(calb.Name)
 	//TODO: Allocate IP from neutron
 	iPort, _ := strconv.Atoi(calb.Spec.Port)
-	err := c.driver.CreateLB(lbName, calb.Spec.IP, iPort)
+	err = c.driver.CreateLB(lbName, calb.Spec.IP, iPort)
 	if err != nil {
 		glog.Errorf("CreateLB Failed: %v", err)
 	}
@@ -123,6 +156,8 @@ func (c *CALBController)onCAlbAdd(obj interface{}) {
 	for _, rule := range calb.Spec.Rules {
 		c.addRuleToCALB(lbName, rule)
 	}
+	
+	c.updateAvailable("", calb)
 }
 
 func (c *CALBController)refreshRules(oldCALB *lbv1.CAppLoadBalance, newCALB *lbv1.CAppLoadBalance)error{
@@ -163,7 +198,15 @@ func (c *CALBController)onCAlbDel(obj interface{}) {
 	for _, rule := range calb.Spec.Rules {
 		c.removeRuleToCALB(lbName, rule)
 	}
-	c.driver.DeleteLB(lbName)	
+	c.driver.DeleteLB(lbName)
+	utils.ReleaseIpAddr(calb.Namespace, calb.Spec.IP)		
+}
+
+func (c *CALBController)updateAvailable(msg string, calb *lbv1.CAppLoadBalance) {
+	calb.Status.State = lbv1.CALBSTATUSAVAILABLE
+	calb.Status.Message = msg
+	calbclient := crdclient.CALBClient(c.crdClient, c.crdScheme, calb.Namespace)
+	_, _ = calbclient.Update(calb, calb.Name)
 }
 
 func (c *CALBController)updateError(msg string, calb *lbv1.CAppLoadBalance) {

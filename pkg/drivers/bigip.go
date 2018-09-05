@@ -112,6 +112,10 @@ func (f5 *F5er)createVirtualServerURL(name, ip, port string)error{
 }
 func (f5 *F5er)CreateVirtualServer(vsType string, name string, ip string, port string, protocol string)error{
 	var err error
+	if port == "*" || protocol == "*" {
+		port = "0"
+		protocol = "any"
+	}	
 	
 	switch vsType {
 		case "nat":
@@ -273,6 +277,10 @@ func (f5 *F5er)DeletePool(poolName string)error{
 }
 
 func (f5 *F5er)AddPoolMember(poolName, memberIp, memberPort string)error{
+	if memberPort == "*" {
+		memberPort = "0"
+	}	
+	
 	memberConfig := &bigip.PoolMember {
 		Name : memberIp + ":" + memberPort,
 	}
@@ -299,6 +307,10 @@ func (f5 *F5er)AddPoolMember(poolName, memberIp, memberPort string)error{
 }
 
 func (f5 *F5er)DelPoolMember(poolName, memberIp, memberPort string)error{
+	if memberPort == "*" {
+		memberPort = "0"
+	}
+	
 	member := memberIp + ":" + memberPort
 	err := f5.client.DeletePoolMember(poolName, member)
 	if err != nil {

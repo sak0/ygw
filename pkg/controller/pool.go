@@ -84,6 +84,7 @@ func (c *PoolController)onPoolAdd(obj interface{}) {
 		return		
 	}
 	for _, member := range pool.Spec.Members {
+		glog.V(3).Infof("Add member %s:%s to Pool %s", member.IP, member.Port, poolName)
 		err = c.driver.AddPoolMember(poolName, member.IP, member.Port)
 		glog.Errorf("AddPoolMember failed: %+v\n", err)
 	}

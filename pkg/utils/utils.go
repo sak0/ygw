@@ -104,19 +104,19 @@ func GenerateSvcNameCLB(namespace string, ip string, port int32, protocol string
 
 func GenerateSvcGroupNameCLB(namespace string, svcname string)string {
 	devHash := hashIp()
-	gpName := devHash + "_CLB_" + namespace + "_" + svcname
+	gpName := devHash + "_CALB_" + namespace + "_" + svcname
 	return gpName
 }
 
-func GenerateServerNameCLB(namespace string, ip string)string {
+func GenerateServerNameCALB(namespace string, ip string)string {
 	devHash := hashIp()
-	serverName := devHash + "_CLB_" + namespace + "_" + strings.Replace(ip, ".", "_", -1)
+	serverName := devHash + "_CALB_" + namespace + "_" + strings.Replace(ip, ".", "_", -1)
 	return serverName
 }
 
-func GeneratePortNameCLB(namespace string, ip string)string {
+func GeneratePortNameCALB(namespace string, ip string)string {
 	devHash := hashIp()
-	portName := devHash + "_CLB_" + namespace + "_" + strings.Replace(ip, ".", "_", -1)
+	portName := devHash + "_CALB_" + namespace + "_" + strings.Replace(ip, ".", "_", -1)
 	return portName
 }
 
